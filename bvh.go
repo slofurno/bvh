@@ -16,6 +16,23 @@ type AABB struct {
 	MaxY float64
 }
 
+func SquareRatio(a1 *AABB, a2 *AABB) float64 {
+
+	minX := math.Min(a1.MinX, a2.MinX)
+	maxX := math.Max(a1.MaxX, a2.MaxX)
+	minY := math.Min(a1.MinY, a2.MinY)
+	maxY := math.Max(a1.MaxY, a2.MaxY)
+
+	width := maxX - minX
+	height := maxY - minY
+
+	p := 2*width + 2*height
+	a := width * height
+
+	return p / a
+
+}
+
 func (a1 *AABB) Merge(a2 *AABB) *AABB {
 	return &AABB{
 		MinX: math.Min(a1.MinX, a2.MinX),
@@ -125,12 +142,16 @@ func Insert(index int) {
 
 		left := nodes[current].Left
 		right := nodes[current].Right
+		/*
+			tryleft := nodes[left].Bounds.Merge(bounds)
+			tryright := nodes[right].Bounds.Merge(bounds)
 
-		tryleft := nodes[left].Bounds.Merge(bounds)
-		tryright := nodes[right].Bounds.Merge(bounds)
+			leftratio := tryleft.Perimeter() / tryleft.Area()
+			rightratio := tryright.Perimeter() / tryright.Area()
+		*/
 
-		leftratio := tryleft.Perimeter() / tryleft.Area()
-		rightratio := tryright.Perimeter() / tryright.Area()
+		leftratio := SquareRatio(nodes[left].Bounds, bounds)
+		rightratio := SquareRatio(nodes[right].Bounds, bounds)
 
 		if leftratio > rightratio {
 			current = left
@@ -210,13 +231,13 @@ func main() {
 	p := profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
 	defer p.Stop()
 
-	const maxsize int = 10000
+	const maxsize int = 1000
 
 	squares := []*Square{}
 	width := float64(2)
 	height := float64(2)
 
-	for i := 0; i < 15000; i++ {
+	for i := 0; i < 9000; i++ {
 
 		x1 := float64(rand.Intn(maxsize))
 		y1 := float64(rand.Intn(maxsize))
