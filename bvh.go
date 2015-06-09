@@ -16,25 +16,7 @@ type AABB struct {
 	MaxY float64
 }
 
-var mergecalls int = 0
-
-func (a *AABB) Clone() *AABB {
-	return &AABB{
-		MinX: a.MinX,
-		MaxX: a.MaxX,
-		MinY: a.MinY,
-		MaxY: a.MaxY}
-}
-
-func (a1 *AABB) Add(a2 *AABB) {
-	a1.MinX = math.Min(a1.MinX, a2.MinX)
-	a1.MaxX = math.Max(a1.MaxX, a2.MaxX)
-	a1.MinY = math.Min(a1.MinY, a2.MinY)
-	a1.MaxY = math.Max(a1.MaxY, a2.MaxY)
-}
-
 func (a1 *AABB) Merge(a2 *AABB) *AABB {
-	mergecalls++
 	return &AABB{
 		MinX: math.Min(a1.MinX, a2.MinX),
 		MaxX: math.Max(a1.MaxX, a2.MaxX),
@@ -88,7 +70,16 @@ type Node struct {
 	Bounds *AABB
 	Left   int
 	Right  int
+	Parent int
 	Value  Bounded
+	Next   int
+}
+
+func (n *Node) IsLeaf() bool {
+	if n.Left >= 0 {
+		return false
+	}
+	return true
 }
 
 func (n *Node) GetBounds() *AABB {
@@ -97,152 +88,135 @@ func (n *Node) GetBounds() *AABB {
 
 var scannode int = 0
 
-func Scan(n *Node, b Bounded) {
+func Scan(n int, b Bounded) {
 
-	scannode++
-
-	if !n.GetBounds().Intersects(b.GetBounds()) {
+	if n == -1 {
 		return
 	}
 
-	if n.Value != nil && n.Value != b && n.Value.GetBounds().Intersects(b.GetBounds()) {
+	if !nodes[n].GetBounds().Intersects(b.GetBounds()) {
+		return
+	}
+
+	if nodes[n].Value != nil && nodes[n].Value != b && nodes[n].Value.GetBounds().Intersects(b.GetBounds()) {
 		//*results = append(*results, n.Value)
-		pairs[pairindex] = n.Value
+		pairs[pairindex] = nodes[n].Value
 		pairindex++
 		return
 	}
 
-	if n.Right > 0 {
-		Scan(&nodes[n.Left], b)
-		Scan(&nodes[n.Right], b)
-	} else if n.Left > 0 {
-		Scan(&nodes[n.Left], b)
-
-	}
+	Scan(nodes[n].Left, b)
+	Scan(nodes[n].Right, b)
 
 }
 
-var nodecount int = 0
+func Insert(index int) {
 
-func (n *Node) Insert(b Bounded) {
-	n.Bounds.Add(b.GetBounds())
+	if rootindex == -1 {
+		rootindex = index
+		nodes[index].Parent = -1
+		return
+	}
 
-	//left + right both have value, pick optimal one to continue down
-	if n.Left > 0 && n.Right > 0 {
+	bounds := nodes[index].GetBounds()
+	current := rootindex
 
-		tryleft := nodes[n.Left].Bounds.Merge(b.GetBounds())
-		tryright := nodes[n.Right].Bounds.Merge(b.GetBounds())
+	for nodes[current].IsLeaf() == false {
+
+		left := nodes[current].Left
+		right := nodes[current].Right
+
+		tryleft := nodes[left].Bounds.Merge(bounds)
+		tryright := nodes[right].Bounds.Merge(bounds)
 
 		leftratio := tryleft.Perimeter() / tryleft.Area()
 		rightratio := tryright.Perimeter() / tryright.Area()
 
 		if leftratio > rightratio {
-
-			nodes[n.Left].Insert(b)
+			current = left
 		} else {
-
-			nodes[n.Right].Insert(b)
+			current = right
 		}
-		//right must be empty, insert new node there
-	} else if n.Left > 0 {
-		n.Right = nextnode
-		nextnode++
+	}
 
-		nodes[n.Right].Value = b
-		nodes[n.Right].Bounds = b.GetBounds().Clone()
+	parent := nodes[current].Parent
 
-		//&Node{Value: b, Bounds: b.GetBounds()}
-	} else if n.Value != nil {
-		n.Left = nextnode
-		nextnode++
-		nodes[n.Left].Value = b
-		nodes[n.Left].Bounds = b.GetBounds().Clone()
+	newnode := getNode()
+	nodes[newnode].Parent = parent
+	nodes[newnode].Left = current
+	nodes[newnode].Right = index
+	nodes[current].Parent = newnode
+	nodes[index].Parent = newnode
 
-		n.Right = nextnode
-		nextnode++
-		nodes[n.Right].Value = n.Value
-		nodes[n.Right].Bounds = n.Bounds.Clone()
+	if parent != -1 {
 
-		//n.Left = &Node{Value: b, Bounds: b.GetBounds()}
-		//n.Right = &Node{Value: n.Value, Bounds: n.Bounds}
-		nodecount += 2
-		n.Value = nil
+		if nodes[parent].Left == current {
+			nodes[parent].Left = newnode
+		} else {
+			nodes[parent].Right = newnode
+		}
+
 	} else {
-		n.Value = b
+		rootindex = newnode
 	}
-	/*
-		n.Bounds = n.Bounds.Merge(b.GetBounds())
-		if n.IsLeaf() {
-			n.Left = &Node{Value: b, Bounds: b.GetBounds()}
-			if n.Value != nil {
-				n.Right = &Node{Value: n.Value, Bounds: n.Bounds}
-				n.Value = nil
-			}
-			//n.Bounds = n.Left.Bounds.Merge(n.Right.Bounds)
-			return
-		}
 
-		if n.Right == nil {
-			n.Right = &Node{Value: b, Bounds: b.GetBounds()}
+	current = nodes[index].Parent
 
-		} else {
-			tryleft := n.Left.Bounds.Merge(b.GetBounds()).Area()
-			tryright := n.Right.Bounds.Merge(b.GetBounds()).Area()
+	for current != -1 {
 
-			if tryleft < tryright {
-				n.Left.Insert(b)
-			} else {
-				n.Right.Insert(b)
-			}
-		}
-	*/
-}
+		left := nodes[current].Left
+		right := nodes[current].Right
 
-func castNode(n Bounded) *Node {
-	switch t := n.(type) {
-	case *Node:
-		return t
-	default:
-		panic("cant cast to node")
+		nodes[current].Bounds = nodes[left].Bounds.Merge(nodes[right].Bounds)
+		current = nodes[current].Parent
 	}
 
 }
 
-var pairs = make([]Bounded, 20000)
+var pairs = make([]Bounded, 100000)
 var pairindex int = 0
 var nodes = make([]Node, 100000)
+var nodecount int = 0
 var nextnode int = 0
+var rootindex = -1
 
-func Init() {
-	for i := 0; i < len(nodes); i++ {
-		nodes[i] = Node{}
-	}
+func getNode() int {
+	nextindex := nextnode
+	nextnode = nodes[nextnode].Next
+	nodes[nextindex].Parent = -1
+	nodes[nextindex].Left = -1
+	nodes[nextindex].Right = -1
+
+	return nextindex
 }
 
-func Clear() {
-	for i := 0; i < nextnode; i++ {
-		nodes[i].Value = nil
-		nodes[i].Left = 0
-		nodes[i].Right = 0
+func putNode(index int) {
+	nodes[index].Next = nextnode
+	nextnode = index
+}
 
+func initNodes() {
+	nextnode = 0
+	rootindex = -1
+	for i := 0; i < len(nodes); i++ {
+		nodes[i].Next = i + 1
 	}
-	nextnode = 1
+
 }
 
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	p := profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
 	defer p.Stop()
 
-	const maxsize int = 10000
+	const maxsize int = 1000
 
 	squares := []*Square{}
-	width := float64(10)
-	height := float64(10)
+	width := float64(2)
+	height := float64(2)
 
-	for i := 0; i < 15000; i++ {
+	for i := 0; i < 10000; i++ {
 
 		x1 := float64(rand.Intn(maxsize))
 		y1 := float64(rand.Intn(maxsize))
@@ -253,30 +227,56 @@ func main() {
 	}
 
 	for i := 0; i < 10; i++ {
+		initNodes()
+
 		start := time.Now()
-		Clear()
-		nodecount = 0
 		collisions := 0
 		scannode = 0
 		pairindex = 0
-		mergecalls = 0
+		//root := getNode()
+		//nodes[root].Bounds = &AABB{0, 0, float64(maxsize) + width, float64(maxsize) + height}
 
-		root := &Node{Bounds: &AABB{0, 0, float64(maxsize) + width, float64(maxsize) + height}}
+		//root := &Node{Bounds: &AABB{0, 0, float64(maxsize) + width, float64(maxsize) + height}}
 
+		/*
+		   maxindex := -1
+		   minindex := -1
+		   var maxx float64 = 0
+		   var minx float64 = 99999
+
+		   for index, s := range squares {
+		     if s.GetBounds().MinX > maxx {
+		       maxindex = index
+		       maxx = s.GetBounds().MinX
+		     } else if s.GetBounds().MinX < minx {
+		       minindex = index
+		       minx = s.GetBounds().MinX
+		     }
+
+		   }
+
+		   root.Insert(squares[minindex])
+		   root.Insert(squares[maxindex])
+		*/
 		for _, s := range squares {
-			root.Insert(s)
+			node := getNode()
+			nodes[node].Value = s
+			nodes[node].Bounds = s.GetBounds()
+			Insert(node)
 		}
 
 		insertiondone := time.Since(start)
 
-		for _, s := range squares {
-			Scan(root, s)
-		}
+		/*
+			for _, s := range squares {
+				Scan(root, s)
+			}
+		*/
 
 		collisions = pairindex
 
 		elapsed := time.Since(start)
-		fmt.Println("collisions:", collisions, "elapsed time:", elapsed.String(), "insert time:", insertiondone, "node count", nodecount, "nodes scanned", scannode, "merges:", mergecalls)
+		fmt.Println("collisions:", collisions, "elapsed time:", elapsed.String(), "insert time:", insertiondone)
 
 	}
 
@@ -299,14 +299,14 @@ func main() {
 	}
 
 	/*
-		broad := root.Scan(test)
+	   broad := root.Scan(test)
 
-		fmt.Println("collisions:")
-		for _, square := range broad {
-			fmt.Println(square)
-		}
+	   fmt.Println("collisions:")
+	   for _, square := range broad {
+	     fmt.Println(square)
+	   }
 
-		fmt.Println("manual collisions detected", col)
-		fmt.Println("bvh collisons detected", len(broad))
+	   fmt.Println("manual collisions detected", col)
+	   fmt.Println("bvh collisons detected", len(broad))
 	*/
 }
