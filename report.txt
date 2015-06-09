@@ -1,0 +1,41 @@
+17.31s of 18.18s total (95.21%)
+Dropped 60 nodes (cum <= 0.09s)
+      flat  flat%   sum%        cum   cum%
+     6.57s 36.14% 36.14%     11.34s 62.38%  main.(*Node).Scan
+     2.55s 14.03% 50.17%      2.55s 14.03%  runtime.osyield
+     2.24s 12.32% 62.49%      4.72s 25.96%  scanblock
+     1.58s  8.69% 71.18%      1.58s  8.69%  main.(*Node).GetBounds
+     0.94s  5.17% 76.35%      1.54s  8.47%  main.castNode
+     0.56s  3.08% 79.43%      0.63s  3.47%  runtime.mallocgc
+     0.47s  2.59% 82.01%      0.85s  4.68%  runtime.growslice
+     0.37s  2.04% 84.05%      0.37s  2.04%  runtime.memmove
+     0.33s  1.82% 85.86%      0.33s  1.82%  main.(*Square).GetBounds
+     0.32s  1.76% 87.62%      0.47s  2.59%  runtime.assertI2T2
+     0.30s  1.65% 89.27%      0.70s  3.85%  runtime.newobject
+     0.26s  1.43% 90.70%      0.26s  1.43%  runtime.stdcall1
+     0.17s  0.94% 91.64%      0.57s  3.14%  main.(*AABB).Merge
+     0.14s  0.77% 92.41%      0.14s  0.77%  runtime.atomicor8
+     0.13s  0.72% 93.12%      0.15s  0.83%  runtime.MSpan_Sweep
+     0.13s  0.72% 93.84%      0.13s  0.72%  runtime.ifacethash
+     0.08s  0.44% 94.28%      0.86s  4.73%  main.(*Node).Insert
+     0.07s  0.39% 94.66%      0.30s  1.65%  runtime.newarray
+     0.03s  0.17% 94.83%      2.35s 12.93%  schedule
+     0.02s  0.11% 94.94%      0.10s  0.55%  runtime.newstack
+     0.02s  0.11% 95.05%      0.28s  1.54%  runtime.notewakeup
+     0.02s  0.11% 95.16%      2.26s 12.43%  stopm
+     0.01s 0.055% 95.21%      2.49s 13.70%  getfull
+         0     0% 95.21%      2.74s 15.07%  GC
+         0     0% 95.21%      0.40s  2.20%  System
+         0     0% 95.21%      2.23s 12.27%  findrunnable
+         0     0% 95.21%      0.41s  2.26%  gc
+         0     0% 95.21%     12.23s 67.27%  main.main
+         0     0% 95.21%      0.41s  2.26%  runtime.gc_m
+         0     0% 95.21%      2.22s 12.21%  runtime.gchelper
+         0     0% 95.21%     12.23s 67.27%  runtime.goexit
+         0     0% 95.21%      0.88s  4.84%  runtime.gosched_m
+         0     0% 95.21%     12.23s 67.27%  runtime.main
+         0     0% 95.21%      2.24s 12.32%  runtime.mcall
+         0     0% 95.21%      0.49s  2.70%  runtime.onM
+         0     0% 95.21%      1.44s  7.92%  runtime.park_m
+         0     0% 95.21%      0.26s  1.43%  runtime.semawakeup
+         0     0% 95.21%      0.49s  2.70%  runtime.starttheworld
