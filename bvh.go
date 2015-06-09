@@ -73,27 +73,24 @@ func (n *Node) IsLeaf() bool {
 	return !n.IsBranch
 }
 
-func (n *Node) Scan(b Bounded) []Bounded {
-
-	results := []Bounded{}
+func (n *Node) Scan(b Bounded, results *[]Bounded) {
 
 	if !n.IsLeaf() {
 
 		for _, child := range n.Children {
 			if child.GetBounds().Intersects(b.GetBounds()) {
-				results = append(results, castNode(child).Scan(b)...)
+				castNode(child).Scan(b, results)
 			}
 		}
 
 	} else {
 		for _, child := range n.Children {
 			if b != child && child.GetBounds().Intersects(b.GetBounds()) {
-				results = append(results, child)
+				*results = append(*results, child)
 			}
 		}
 	}
 
-	return results
 }
 
 func (n *Node) Insert(b Bounded) {
@@ -136,16 +133,6 @@ func (n *Node) Insert(b Bounded) {
 	castNode(n.Children[minIndex]).Insert(b)
 }
 
-/*
-func (n *Node) Scan(b Bounded) []Bounded {
-
-	results := []Bounded{}
-
-	if n.IsLeaf() {
-
-	}
-}
-*/
 func castNode(n Bounded) *Node {
 	switch t := n.(type) {
 	case *Node:
@@ -177,7 +164,7 @@ func main() {
 		squares = append(squares, square)
 	}
 
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 50; i++ {
 		start := time.Now()
 
 		collisions := 0
@@ -190,12 +177,17 @@ func main() {
 
 		insertiondone := time.Since(start)
 
+		pairs := &[]Bounded{}
+
 		for _, s := range squares {
-			collisions += len(root.Scan(s))
+			root.Scan(s, pairs)
 		}
+
+		collisions = len(*pairs)
 
 		elapsed := time.Since(start)
 		fmt.Println("collisions:", collisions, "elapsed time:", elapsed.String(), "insert time:", insertiondone)
+
 	}
 
 	/*
@@ -227,16 +219,4 @@ func main() {
 		fmt.Println("manual collisions detected", col)
 		fmt.Println("bvh collisons detected", len(broad))
 	*/
-}
-
-func printBorder(n *Node) {
-
-	fmt.Println(n.GetBounds())
-
-	if !n.IsLeaf() {
-		for _, child := range n.Children {
-			printBorder(castNode(child))
-		}
-	}
-
 }
