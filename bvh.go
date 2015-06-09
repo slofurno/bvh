@@ -210,19 +210,17 @@ func main() {
 	p := profile.Start(profile.CPUProfile, profile.ProfilePath("."), profile.NoShutdownHook)
 	defer p.Stop()
 
-	const maxsize int = 1000
+	const maxsize int = 10000
 
 	squares := []*Square{}
 	width := float64(2)
 	height := float64(2)
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 15000; i++ {
 
 		x1 := float64(rand.Intn(maxsize))
 		y1 := float64(rand.Intn(maxsize))
 		square := NewSquare(x1, y1, x1+width, y1+height)
-		//square := &Square{X1: x1, Y1: y1, X2: x1 + width, Y2: y1 + height}
-		//root.Insert(square)
 		squares = append(squares, square)
 	}
 
@@ -233,31 +231,7 @@ func main() {
 		collisions := 0
 		scannode = 0
 		pairindex = 0
-		//root := getNode()
-		//nodes[root].Bounds = &AABB{0, 0, float64(maxsize) + width, float64(maxsize) + height}
 
-		//root := &Node{Bounds: &AABB{0, 0, float64(maxsize) + width, float64(maxsize) + height}}
-
-		/*
-		   maxindex := -1
-		   minindex := -1
-		   var maxx float64 = 0
-		   var minx float64 = 99999
-
-		   for index, s := range squares {
-		     if s.GetBounds().MinX > maxx {
-		       maxindex = index
-		       maxx = s.GetBounds().MinX
-		     } else if s.GetBounds().MinX < minx {
-		       minindex = index
-		       minx = s.GetBounds().MinX
-		     }
-
-		   }
-
-		   root.Insert(squares[minindex])
-		   root.Insert(squares[maxindex])
-		*/
 		for _, s := range squares {
 			node := getNode()
 			nodes[node].Value = s
@@ -267,11 +241,9 @@ func main() {
 
 		insertiondone := time.Since(start)
 
-		/*
-			for _, s := range squares {
-				Scan(root, s)
-			}
-		*/
+		for _, s := range squares {
+			Scan(rootindex, s)
+		}
 
 		collisions = pairindex
 
@@ -298,15 +270,4 @@ func main() {
 		fmt.Println("collisions:", collisions, "elapsed time:", elapsed.String(), "nodes scanned", scannode)
 	}
 
-	/*
-	   broad := root.Scan(test)
-
-	   fmt.Println("collisions:")
-	   for _, square := range broad {
-	     fmt.Println(square)
-	   }
-
-	   fmt.Println("manual collisions detected", col)
-	   fmt.Println("bvh collisons detected", len(broad))
-	*/
 }
